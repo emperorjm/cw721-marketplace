@@ -1,6 +1,7 @@
 pub mod util;
 
 mod cancel;
+mod crossmint;
 mod fees;
 mod invalid_payment;
 mod offer;

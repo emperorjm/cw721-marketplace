@@ -14,7 +14,7 @@ use cw721_base::msg::InstantiateMsg as Cw721InstantiateMsg;
 
 use crate::msg::InstantiateMsg;
 
-static DENOM: &str = "aarch";
+static DENOM: &str = "uxion";
 static NO_FEES: u64 = 0_u64;
 
 pub fn mock_app() -> App {

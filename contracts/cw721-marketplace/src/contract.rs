@@ -8,7 +8,7 @@ use cw721_marketplace_utils::prelude::SwapType;
 
 use crate::error::ContractError;
 use crate::execute::{
-    execute_cancel, execute_create, execute_finish, execute_update, execute_update_config,
+    execute_cancel, execute_create, execute_finish, execute_finish_for, execute_update, execute_update_config,
     execute_withdraw_fees,
 };
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -64,6 +64,7 @@ pub fn execute(
         // Swap entry points
         ExecuteMsg::Create(msg) => execute_create(deps, env, info, msg),
         ExecuteMsg::Finish(msg) => execute_finish(deps, env, info, msg),
+        ExecuteMsg::FinishFor(msg) => execute_finish_for(deps, env, info, msg),
         ExecuteMsg::Update(msg) => execute_update(deps, env, info, msg),
         ExecuteMsg::Cancel(msg) => execute_cancel(deps, env, info, msg),
 
@@ -179,7 +180,7 @@ mod tests {
         // Instantiate an empty contract
         let instantiate_msg = InstantiateMsg {
             admin: Addr::unchecked(MOCK_CONTRACT_ADDR),
-            denom: "aarch".into(),
+            denom: "uxion".into(),
             fee_percentage: 0_u64,
         };
         let info = mock_info("anyone", &[]);

@@ -197,20 +197,20 @@ pub fn handle_swap_transfers(
         }
         .into();
         cw20_callback
-    // aarch swap
+    // native token swap
     } else {
         let payment_funds = ([Coin {
             denom,
             amount: fee_split.seller,
         }])
         .to_vec();
-        let aarch_transfer_msg = BankMsg::Send {
+        let native_transfer_msg = BankMsg::Send {
             to_address: nft_sender.to_string(),
             amount: payment_funds,
         };
 
-        let aarch_callback: CosmosMsg = cosmwasm_std::CosmosMsg::Bank(aarch_transfer_msg);
-        aarch_callback
+        let native_callback: CosmosMsg = cosmwasm_std::CosmosMsg::Bank(native_transfer_msg);
+        native_callback
     };
 
     let market_callback: Option<CosmosMsg> =

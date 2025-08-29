@@ -297,7 +297,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Show all swaps of a given denom (contract address) Defaults to ARCH if no contract is sent",
+      "description": "Show all swaps of a given denom (contract address) Defaults to native token if no contract is sent",
       "type": "object",
       "required": [
         "swaps_by_denom"
@@ -358,7 +358,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Show all cw20 swaps, or all ARCH swaps",
+      "description": "Show all cw20 swaps, or all native token swaps",
       "type": "object",
       "required": [
         "swaps_by_payment_type"

@@ -63,7 +63,7 @@ Each type of listing has specific caveats that must be followed to meet the orig
 | Name          | Type                      | Description                                                                    |
 |---------------|---------------------------|--------------------------------------------------------------------------------|
 | id            | String                    | Created ID for the listing, cannot be a currently existing ID                  |
-| payment_token | String(Address)           | Optional cs20 address, defaults to aarch if empty                              |
+| payment_token | String(Address)           | Optional cw20 address, defaults to native token if empty                       |
 | token_id      | String                    | Nft token id                                                                   |
 | expires       | [Expiration](#Expiration) | When the listing will expire                                                   |
 | price         | String(Uint128)           | When a sale its the requested amount, when its an offer its the offered amount |

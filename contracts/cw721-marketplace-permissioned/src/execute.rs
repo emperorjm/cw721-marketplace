@@ -12,7 +12,7 @@ use crate::utils::{
 use cw721_marketplace_utils::{prelude::CW721Swap, prelude::SwapType, FeeSplit};
 
 use crate::error::ContractError;
-use crate::msg::{CancelMsg, FinishSwapMsg, SwapMsg, UpdateMsg, UpdateNftMsg, WithdrawMsg};
+use crate::msg::{CancelMsg, FinishSwapMsg, FinishSwapForMsg, SwapMsg, UpdateMsg, UpdateNftMsg, WithdrawMsg};
 use crate::state::{cw721_allowed, Config, CONFIG, CW721, SWAPS};
 
 pub fn execute_create(
@@ -126,7 +126,7 @@ pub fn execute_finish(
         return Err(ContractError::Unauthorized {});
     }
 
-    // If swapping for native `aarch`
+    // If swapping for native token
     // check payment conditions satisfied
     if swap.payment_token.is_none() {
         let required_payment = Coin {
@@ -135,7 +135,7 @@ pub fn execute_finish(
         };
         check_sent_required_payment(&info.funds, Some(required_payment))?;
 
-        // Native aarch offers not allowed
+        // Native token offers not allowed
         if swap.swap_type == SwapType::Offer {
             return Err(ContractError::InvalidInput {});
         }
@@ -211,6 +211,110 @@ pub fn execute_finish(
         .add_attribute("action", "finish")
         .add_attribute("swap_id", swap.id)
         .add_attribute("token_id", swap.token_id)
+        .add_attribute("payment_token", payment_token)
+        .add_attribute("price", swap.price)
+        .add_messages(transfer_results))
+}
+
+pub fn execute_finish_for(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: FinishSwapForMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let swap = SWAPS.load(deps.storage, &msg.id)?;
+    // If expired, revert
+    if swap.expires.is_expired(&env.block) {
+        return Err(ContractError::Expired {});
+    }
+
+    // If swapping for native token
+    // check payment conditions satisfied
+    if swap.payment_token.is_none() {
+        let required_payment = Coin {
+            denom: config.denom.clone(),
+            amount: swap.price,
+        };
+        check_sent_required_payment(&info.funds, Some(required_payment))?;
+
+        // Native token offers not allowed
+        if swap.swap_type == SwapType::Offer {
+            return Err(ContractError::InvalidInput {});
+        }
+    }
+
+    // Calculate fee split
+    let split = if swap.payment_token.is_none() {
+        let funds: Vec<Coin> = info
+            .funds
+            .into_iter()
+            .filter(|coin| coin.denom == config.denom)
+            .collect();
+
+        fee_split(&deps, funds[0].amount).unwrap_or(FeeSplit::only_seller(funds[0].amount))
+    } else {
+        fee_split(&deps, swap.price).unwrap_or(FeeSplit::only_seller(swap.price))
+    };
+
+    // Do swap transfer - key difference: NFT goes to specified recipient
+    let transfer_results = match swap.swap_type {
+        SwapType::Offer => {
+            let owner_of: OwnerOfResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: swap.nft_contract.to_string(),
+                    msg: to_json_binary(&cw721::Cw721QueryMsg::OwnerOf {
+                        token_id: swap.token_id.clone(),
+                        include_expired: None,
+                    })?,
+                }))?;
+
+            if owner_of.owner != info.sender {
+                return Err(ContractError::Unauthorized {});
+            }
+
+            handle_swap_transfers(
+                env,
+                &info.sender,
+                &msg.recipient, // NFT goes to specified recipient, not swap creator
+                swap.clone(),
+                config.denom.clone(),
+                split,
+            )?
+        }
+        SwapType::Sale => handle_swap_transfers(
+            env,
+            &swap.creator,
+            &msg.recipient, // NFT goes to specified recipient, not message sender
+            swap.clone(),
+            config.denom.clone(),
+            split,
+        )?,
+    };
+
+    // Remove all swaps for this token_id
+    // (as they're no longer valid)
+    let swap_data = swap.clone();
+    let swaps: Result<Vec<(String, CW721Swap)>, cosmwasm_std::StdError> = SWAPS
+        .range(deps.storage, None, None, Order::Ascending)
+        .collect();
+    for swap in swaps.unwrap().iter() {
+        if swap.1.token_id == swap_data.token_id && swap.1.nft_contract == swap_data.nft_contract {
+            SWAPS.remove(deps.storage, &swap.0);
+        }
+    }
+
+    let payment_token: String = if swap.payment_token.is_some() {
+        swap.payment_token.unwrap().to_string()
+    } else {
+        config.denom
+    };
+
+    Ok(Response::new()
+        .add_attribute("action", "finish_for")
+        .add_attribute("swap_id", swap.id)
+        .add_attribute("token_id", swap.token_id)
+        .add_attribute("recipient", msg.recipient)
         .add_attribute("payment_token", payment_token)
         .add_attribute("price", swap.price)
         .add_messages(transfer_results))

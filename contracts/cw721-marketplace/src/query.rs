@@ -247,7 +247,7 @@ pub fn query_swaps_by_denom(
                 item.payment_token.clone().unwrap() == token_addr && item.swap_type == side
             })
             .collect()
-    // Native ARCH denom
+    // Native token denom
     } else {
         swaps
             .unwrap()
@@ -298,7 +298,7 @@ pub fn query_swaps_by_payment_type(
             .map(|t| t.1)
             .filter(|item| item.payment_token.is_some() && item.swap_type == side)
             .collect()
-    // ARCH swap
+    // Native token swap
     } else {
         swaps
             .unwrap()

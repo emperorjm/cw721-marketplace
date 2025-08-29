@@ -15,7 +15,7 @@ use crate::integration_tests::util::{
 use crate::msg::{ExecuteMsg, FinishSwapMsg, QueryMsg, SwapMsg};
 use crate::state::SwapType;
 
-static DENOM: &str = "aarch";
+static DENOM: &str = "uxion";
 
 // Swap buyer pays with ARCH
 #[test]
@@ -40,7 +40,7 @@ fn test_buy_native() {
     mint_native(
         &mut app,
         arch_owner.to_string(),
-        Uint128::from(10000000000000000000_u128), // 10 ARCH as aarch
+        Uint128::from(10000000000000000000_u128), // 10 XION as uxion
     );
 
     // cw721_owner mints a cw721
@@ -62,7 +62,7 @@ fn test_buy_native() {
         payment_token: None,
         token_id: token_id.clone(),
         expires: Expiration::from(cw20::Expiration::AtHeight(384798573487439743)),
-        price: Uint128::from(1000000000000000000_u128), // 1 ARCH as aarch
+        price: Uint128::from(1000000000000000000_u128), // 1 XION as uxion
         swap_type: SwapType::Sale,
     };
     let finish_msg = FinishSwapMsg {

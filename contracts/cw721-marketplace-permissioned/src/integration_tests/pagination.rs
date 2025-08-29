@@ -86,7 +86,7 @@ fn test_pagination() {
             payment_token: None,
             token_id: token_id.clone(),
             expires: Expiration::from(cw20::Expiration::AtHeight(384798573487439743)),
-            price: Uint128::from(1000000000000000000_u128), // 1 ARCH as aarch
+            price: Uint128::from(1000000000000000000_u128), // 1 XION as uxion
             swap_type: SwapType::Sale,
         };
         // Create swap listing
