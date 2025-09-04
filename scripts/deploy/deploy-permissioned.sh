@@ -1,0 +1,184 @@
+#!/bin/bash
+
+# Deploy CW721 Permissioned Marketplace Contract to XION
+# This script deploys a curated marketplace with whitelisted NFT collections
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Load environment variables
+if [ -f .env ]; then
+    source .env
+else
+    echo -e "${RED}Error: .env file not found${NC}"
+    exit 1
+fi
+
+# Check for NFT collections list
+if [ "$#" -lt 1 ]; then
+    echo -e "${RED}Error: At least one NFT collection address required${NC}"
+    echo "Usage: $0 <nft_address1> [nft_address2] [nft_address3] ..."
+    echo "Example: $0 xion1abc... xion1def... xion1ghi..."
+    exit 1
+fi
+
+# Build collections array
+COLLECTIONS_JSON="["
+for i in "$@"; do
+    if [ "$COLLECTIONS_JSON" != "[" ]; then
+        COLLECTIONS_JSON+=","
+    fi
+    COLLECTIONS_JSON+="\"$i\""
+done
+COLLECTIONS_JSON+="]"
+
+# Default values
+RPC_URL=${XION_RPC_URL:-"https://rpc.xion-testnet-1.burnt.com:443"}
+CHAIN_ID=${XION_CHAIN_ID:-"xion-testnet-1"}
+WALLET=${WALLET_NAME:-"deployer"}
+ADMIN=${ADMIN_ADDRESS:-$WALLET}
+FEE_PERCENTAGE=${FEE_PERCENTAGE:-2}
+DENOM="uxion"
+
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}  Deploying Permissioned Marketplace${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo "Network: $CHAIN_ID"
+echo "Admin: $ADMIN"
+echo "Fee: $FEE_PERCENTAGE%"
+echo "Whitelisted Collections: $#"
+for collection in "$@"; do
+    echo "  - $collection"
+done
+echo ""
+
+# Step 1: Build and optimize
+echo -e "${YELLOW}Step 1: Building and optimizing contract...${NC}"
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}Error: Docker is not running. Please start Docker and try again.${NC}"
+    echo "On macOS: Open Docker Desktop application"
+    echo "On Linux: Run 'sudo systemctl start docker'"
+    exit 1
+fi
+
+# Navigate to project root for workspace build
+cd ..
+
+# Optimize the contract (this also builds it)
+echo -e "${YELLOW}Building and optimizing WASM with Docker...${NC}"
+docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer:0.16.0
+
+if [ ! -f "artifacts/cw721_marketplace_permissioned.wasm" ]; then
+    echo -e "${RED}Error: Optimized WASM not found${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Contract optimized successfully!${NC}"
+
+# Step 2: Deploy contract using TypeScript
+echo -e "${YELLOW}Step 2: Deploying contract to chain...${NC}"
+
+# Change back to scripts directory for TypeScript deployment
+cd scripts
+
+# Check if npm dependencies are installed
+if [ ! -d "node_modules" ]; then
+    echo -e "${YELLOW}Installing npm dependencies...${NC}"
+    npm install
+fi
+
+# Run TypeScript deployment script with all collection addresses
+echo -e "${YELLOW}Running TypeScript deployment...${NC}"
+npx ts-node deploy/deploy-marketplace.ts permissioned "$@"
+
+exit 0
+
+# Old code below (keeping for reference but won't execute)
+if false; then
+    TX_HASH=$(xiond tx wasm store artifacts/cw721_marketplace_permissioned.wasm \
+        --from $WALLET \
+        --chain-id $CHAIN_ID \
+        --node $RPC_URL \
+        --gas auto \
+        --gas-adjustment 1.3 \
+        --fees 50000$DENOM \
+        --broadcast-mode block \
+        --output json \
+        -y | jq -r '.txhash')
+    
+    CODE_ID=$(xiond query tx $TX_HASH --node $RPC_URL --output json | \
+        jq -r '.logs[0].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+else
+    echo -e "${RED}xiond not found. Please install or use TypeScript deployment.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Contract stored with Code ID: $CODE_ID${NC}"
+
+# Step 3: Instantiate
+echo -e "${YELLOW}Step 3: Instantiating contract...${NC}"
+
+INIT_MSG=$(cat <<EOF
+{
+  "admin": "$ADMIN",
+  "denom": "$DENOM",
+  "cw721": $COLLECTIONS_JSON,
+  "fee_percentage": $FEE_PERCENTAGE
+}
+EOF
+)
+
+echo "Instantiation message:"
+echo "$INIT_MSG" | jq '.'
+
+CONTRACT_ADDRESS=$(xiond tx wasm instantiate $CODE_ID "$INIT_MSG" \
+    --from $WALLET \
+    --label "Permissioned Marketplace" \
+    --chain-id $CHAIN_ID \
+    --node $RPC_URL \
+    --gas auto \
+    --gas-adjustment 1.3 \
+    --fees 50000$DENOM \
+    --broadcast-mode block \
+    --output json \
+    -y | jq -r '.logs[0].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}  Deployment Successful!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo "Contract Address: $CONTRACT_ADDRESS"
+echo "Code ID: $CODE_ID"
+
+# Save deployment info
+DEPLOYMENT_FILE="../deployments/permissioned-$(date +%Y%m%d-%H%M%S).json"
+mkdir -p ../deployments
+
+cat <<EOF > $DEPLOYMENT_FILE
+{
+  "network": "$CHAIN_ID",
+  "contract_type": "cw721-marketplace-permissioned",
+  "code_id": $CODE_ID,
+  "contract_address": "$CONTRACT_ADDRESS",
+  "whitelisted_collections": $COLLECTIONS_JSON,
+  "admin": "$ADMIN",
+  "denom": "$DENOM",
+  "fee_percentage": $FEE_PERCENTAGE,
+  "deployed_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+
+echo "Deployment info saved to: $DEPLOYMENT_FILE"
+echo ""
+echo "To add more collections later, use the admin AddNft function"

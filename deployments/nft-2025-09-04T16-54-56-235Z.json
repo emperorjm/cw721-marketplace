@@ -1,0 +1,12 @@
+{
+  "network": "xion-testnet-2",
+  "contractType": "cw721-nft",
+  "codeId": "522",
+  "contractAddress": "xion1c9udax5y93dkemf6cq2gzy82kmjxy8y0z6gck4v2nmfkttxvayxqck0n0t",
+  "name": "My Collection",
+  "symbol": "MYCOL",
+  "minter": "xion1nhqpcryftzj9ncs0fmw3h83smxallt44ve6hg9",
+  "deployedAt": "2025-09-04T16:54:56.233Z",
+  "deployer": "xion1nhqpcryftzj9ncs0fmw3h83smxallt44ve6hg9",
+  "transactionHash": "B71783DB3EBB666D7E388576A25D13B4D364FF114AFC451882255412F01E8274"
+}

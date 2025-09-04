@@ -1,0 +1,40 @@
+{
+  "name": "cw721-marketplace-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for interacting with CW721 Marketplace contracts on XION",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy:nft": "ts-node deploy/deploy-nft.ts",
+    "deploy:marketplace": "ts-node deploy/deploy-marketplace.ts marketplace",
+    "deploy:single-collection": "ts-node deploy/deploy-marketplace.ts single-collection",
+    "deploy:permissioned": "ts-node deploy/deploy-marketplace.ts permissioned",
+    "mint-nft": "ts-node interact/mint-nft.ts",
+    "create-listing": "ts-node interact/create-listing.ts",
+    "buy-nft": "ts-node interact/buy-nft.ts",
+    "buy-for-user": "ts-node interact/buy-for-user.ts",
+    "cancel-listing": "ts-node interact/cancel-listing.ts",
+    "update-listing": "ts-node interact/update-listing.ts",
+    "get-listings": "ts-node query/get-listings.ts",
+    "get-listing": "ts-node query/get-listing-details.ts",
+    "get-user-listings": "ts-node query/get-user-listings.ts",
+    "search-by-price": "ts-node query/search-by-price.ts",
+    "debug-wallet": "ts-node debug-wallet.ts"
+  },
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.32.0",
+    "@cosmjs/proto-signing": "^0.32.0",
+    "@cosmjs/stargate": "^0.32.0",
+    "@cosmjs/crypto": "^0.32.0",
+    "@cosmjs/encoding": "^0.32.0",
+    "dotenv": "^16.3.1",
+    "yargs": "^17.7.2",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/yargs": "^17.0.24",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}

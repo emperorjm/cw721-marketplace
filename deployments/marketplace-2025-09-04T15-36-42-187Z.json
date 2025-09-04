@@ -1,0 +1,15 @@
+{
+  "network": "xion-testnet-2",
+  "contractType": "marketplace",
+  "codeId": 1516,
+  "contractAddress": "xion1al70dzcuf6q75nd9re3e3pfx0ztxmjl0npcglzlcxsegv8dvv5mq6ul98p",
+  "admin": "xion1l5fq4la4jjh827wnay8g022z69mumz84jwl6zt",
+  "denom": "uxion",
+  "feePercentage": 2,
+  "deployedAt": "2025-09-04T15:36:42.184Z",
+  "deployer": "xion1nhqpcryftzj9ncs0fmw3h83smxallt44ve6hg9",
+  "transactionHashes": {
+    "upload": "1D77B24840C2719BFA3E9A1BF586B4C238DD872C150274ABE5C1BD00FA458308",
+    "instantiate": "44ECA8985879A9B5C0659C5D4AF9E5548CA1CF334E4B6D627CD5825D22B3F410"
+  }
+}

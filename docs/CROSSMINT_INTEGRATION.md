@@ -260,20 +260,8 @@ While the primary integration uses native XION tokens, the marketplace also supp
 2. The FinishFor message remains the same
 3. No funds are attached to the transaction (payment handled via CW20 transfer)
 
-## Contact & Support
+## Support
 
-For integration support or questions:
 - Review the contract source code in `/contracts/cw721-marketplace/`
 - Run integration tests: `cargo test crossmint`
 - Check example implementations in `/contracts/cw721-marketplace/src/integration_tests/crossmint.rs`
-
-## Mainnet Deployment Checklist
-
-- [ ] Audit smart contracts
-- [ ] Deploy contracts with appropriate admin settings
-- [ ] Set reasonable fee percentages
-- [ ] Configure rate limiting (if needed)
-- [ ] Implement monitoring and alerting
-- [ ] Test full purchase flow on testnet
-- [ ] Document contract addresses
-- [ ] Provide API endpoints to Crossmint team
